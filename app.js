@@ -70,7 +70,7 @@ function getBotResponse(msg){const m=msg.toLowerCase();if(m.includes('quadratic'
 function selectMarks(el){testMarks=parseInt(el.dataset.marks);document.querySelectorAll('.test-option').forEach(opt=>{opt.classList.remove('selected');});el.classList.add('selected');}
 function generateTestPaper(){const subjectId=document.getElementById('testSubject').value;const chapter=document.getElementById('testChapter').value.trim();const subject=subjectId?state.subjects[subjectId]:null;const subName=subject?subject.name:'General';const topic=chapter||'Various';let q='';if(testMarks===20)q='**Section A**[10]<br>1.Define '+topic+'<br>2.Characteristics<br>3.Formula<br><br>**Section B**[10-2]<br>4.Explain+diagram<br>5.Differentiate<br>6.Numerical';else if(testMarks===50)q='**Section A**[20]<br>1.Define[2]<br>2.Principle[2]<br>3.Applications[4]<br>4.Diagram[6]<br>5.Mechanism[6]<br><br>**Section B**[30-3]<br>6.Parts[10]<br>7-9.Numericals[5each]';else q='**Section A**[40]<br>1.Define&explain[8]<br>2.Diagram[8]<br>3.Laws[8]<br>4.Notes[12]<br>5.Derive[4]<br><br>**Section B**[60-4]<br>6-11.Numericals,Essays[15each]';document.getElementById('testPaperContent').innerHTML='<div class="test-paper-header"><div class="test-paper-title">ICSE TEST PAPER</div><div>Subject:'+escapeHtml(subName)+' | Topic:'+escapeHtml(topic)+'</div><div>Marks:'+testMarks+' | Time:'+testMarks+'min</div></div>'+q.replace(/\n/g,'<br>').replace(/\*\*/g,'');document.getElementById('testOutput').classList.add('active');showToast('Generated!','success');}
 function copyTest(){const content=document.getElementById('testPaperContent').innerText;navigator.clipboard.writeText(content).then(()=>{showToast('Copied!','success');});}
-function openAdminModal(){renderAdminUserList();updateAdminStats();updateAIStatus();const keyInput=document.getElementById('geminiApiKey');if(keyInput)keyInput.value=getGeminiKey();document.getElementById('adminModal').classList.add('active');}
+function openAdminModal(){renderAdminUserList();updateAdminStats();updateAIStatus();const keyInput=document.getElementById('geminiApiKey');if(keyInput)keyInput.value=getGeminiKey();const promptInput=document.getElementById('customSystemPrompt');if(promptInput)promptInput.value=getSystemPrompt();document.getElementById('adminModal').classList.add('active');}
 function closeAdminModal(){document.getElementById('adminModal').classList.remove('active');}
 function switchAdminTab(tab,el){document.querySelectorAll('.admin-tab').forEach(t=>{t.classList.remove('active');});if(el)el.classList.add('active');document.getElementById('adminUsersTab').style.display=tab==='users'?'block':'none';document.getElementById('adminStatsTab').style.display=tab==='stats'?'block':'none';document.getElementById('adminSettingsTab').style.display=tab==='settings'?'block':'none';}
 function updateAdminStats(){const allUsers=getAllUsers();document.getElementById('adminTotalUsers').textContent=allUsers.length;document.getElementById('adminTotalXP').textContent=state.user.xp;document.getElementById('adminTotalSessions').textContent=state.stats.sessionsCompleted;document.getElementById('adminTotalTime').textContent=Math.round(state.stats.totalStudyTime/60)+'h';}
@@ -94,8 +94,8 @@ function showToast(message,type='info'){const container=document.getElementById(
 /* ===== PASSWORD TOGGLE ===== */
 function togglePassword(inputId,btn){const input=document.getElementById(inputId);if(!input)return;const isPassword=input.type==='password';input.type=isPassword?'text':'password';btn.classList.toggle('active',isPassword);btn.setAttribute('aria-label',isPassword?'Hide password':'Show password');}
 
-/* ===== AI CHATBOT (Smart: AI + Web Search) ===== */
-const AI_SYSTEM_PROMPT = `You are FocusForge AI, a smart study assistant for ICSE Class 10 students.
+/* ===== AI CHATBOT (Smart: AI + Web Search + PDF) ===== */
+const DEFAULT_SYSTEM_PROMPT = `You are FocusForge AI, a smart study assistant for ICSE Class 10 students.
 
 RULES:
 - Keep answers under 200 words
@@ -108,6 +108,12 @@ RULES:
 - Be friendly, encouraging, and enthusiastic
 - If you don't know something, say so honestly`;
 
+function getSystemPrompt(){const user=getCurrentUser();const key=user?'focusforge-prompt-'+user.email:'focusforge-prompt';return localStorage.getItem(key)||DEFAULT_SYSTEM_PROMPT;}
+
+function saveSystemPrompt(){const prompt=document.getElementById('customSystemPrompt').value.trim();if(!prompt){showToast('Enter a prompt','error');return;}const user=getCurrentUser();const key=user?'focusforge-prompt-'+user.email:'focusforge-prompt';localStorage.setItem(key,prompt);showToast('System prompt saved!','success');}
+
+function resetSystemPrompt(){const user=getCurrentUser();const key=user?'focusforge-prompt-'+user.email:'focusforge-prompt';localStorage.removeItem(key);document.getElementById('customSystemPrompt').value='';showToast('Reset to default','success');}
+
 async function sendMessage(){const input=document.getElementById('chatInput');const msg=input.value.trim();if(!msg)return;addChatMessage(escapeHtml(msg),'user');input.value='';addTypingIndicator();try{const response=await callAI(msg);removeTypingIndicator();addChatMessage(response,'bot');}catch(err){removeTypingIndicator();console.error('AI error:',err);addChatMessage(getBotResponse(msg),'bot');}}
 
 async function callAI(userMessage){
@@ -118,7 +124,14 @@ async function callAI(userMessage){
   }catch(e){console.warn('Web search failed:',e.message);}
 
   // Step 2: Build prompt with context
-  let prompt=AI_SYSTEM_PROMPT+'\n\n';
+  const systemPrompt=getSystemPrompt();
+  let prompt=systemPrompt+'\n\n';
+
+  // Add PDF context if available
+  if(window._pdfContext){
+    prompt+='PDF CONTENT ('+window._pdfName+'):\n'+window._pdfContext+'\n\n';
+  }
+
   if(webContext)prompt+='REFERENCE DATA FROM WEB:\n'+webContext+'\n\n';
   prompt+='Student question: '+userMessage+'\n\nAnswer concisely with bullet points:';
 
@@ -210,6 +223,48 @@ function saveGeminiKey(){const key=document.getElementById('geminiApiKey').value
 function clearGeminiKey(){const user=getCurrentUser();const storageKey=user?'focusforge-gemini-key-'+user.email:'focusforge-gemini-key';localStorage.removeItem(storageKey);document.getElementById('geminiApiKey').value='';updateAIStatus();showToast('Using default','success');}
 
 function updateAIStatus(){const el=document.getElementById('aiStatus');if(!el)return;el.innerHTML='<span class="ai-badge online">🟢 AI Ready (Smart Search)</span>';}
+
+/* ===== PDF UPLOAD & ANALYSIS ===== */
+async function handlePDFUpload(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  event.target.value='';
+
+  addChatMessage('📄 <b>Reading: '+escapeHtml(file.name)+'</b>...','bot');
+
+  try{
+    const text=await extractPDFText(file);
+    if(!text||text.trim().length<10){
+      addChatMessage('⚠️ Could not read text from this PDF. It might be scanned/image-based.','bot');
+      return;
+    }
+
+    // Store PDF context for follow-up questions
+    window._pdfContext=text.substring(0,3000);
+    window._pdfName=file.name;
+
+    addChatMessage('✅ <b>'+escapeHtml(file.name)+'</b> loaded! ('+text.length+' characters)<br><br>Now ask me anything about this PDF! For example:<br>• "Summarize this PDF"<br>• "What are the key points?"<br>• "Explain chapter 1"<br>• "Make me a test from this"','bot');
+  }catch(err){
+    console.error('PDF error:',err);
+    addChatMessage('❌ Error reading PDF: '+escapeHtml(err.message),'bot');
+  }
+}
+
+async function extractPDFText(file){
+  const arrayBuffer=await file.arrayBuffer();
+  if(typeof pdfjsLib==='undefined')throw new Error('PDF library not loaded');
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const pdf=await pdfjsLib.getDocument({data:arrayBuffer}).promise;
+  let fullText='';
+  const maxPages=Math.min(pdf.numPages,30);
+  for(let i=1;i<=maxPages;i++){
+    const page=await pdf.getPage(i);
+    const content=await page.getTextContent();
+    const pageText=content.items.map(item=>item.str).join(' ');
+    fullText+=pageText+'\n\n';
+  }
+  return fullText.trim();
+}
 
 function addTypingIndicator(){const messages=document.getElementById('chatMessages');const el=document.createElement('div');el.className='typing-indicator';el.id='typingIndicator';el.innerHTML='<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';messages.appendChild(el);messages.scrollTop=messages.scrollHeight;}
 

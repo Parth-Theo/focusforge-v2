@@ -222,3 +222,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 /* Admin section title */
 .admin-section-title { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+/* Textarea */
+textarea.form-input { min-height: 100px; resize: vertical; font-family: 'Inter', monospace; font-size: 0.85rem; line-height: 1.5; }
+/* Details/Summary */
+details summary { list-style: none; }
+details summary::-webkit-details-marker { display: none; }
+details summary::before { content: '▸ '; }
+details[open] summary::before { content: '▾ '; }

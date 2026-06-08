@@ -279,6 +279,10 @@
             <button class="quick-action" onclick="sendQuickMessage('Explain photosynthesis')">🌿 Biology</button>
             <button class="quick-action" onclick="sendQuickMessage('Explain active and passive voice')">📖 English</button>
             <button class="quick-action" onclick="sendQuickMessage('Give me study tips')">💡 Tips</button>
+            <label class="quick-action" style="cursor:pointer;">
+              📄 Upload PDF
+              <input type="file" accept=".pdf" style="display:none;" onchange="handlePDFUpload(event)">
+            </label>
           </div>
           <div class="chat-input-container">
             <label for="chatInput" class="sr-only">Chat message</label>
@@ -490,16 +494,34 @@
       <!-- Settings Tab -->
       <div id="adminSettingsTab" style="display:none;">
         <div class="settings-section">
-          <div class="admin-section-title">🤖 AI Assistant</div>
+          <div class="admin-section-title">🤖 AI Configuration</div>
           <div style="background:var(--surface);border-radius:8px;padding:12px;margin-bottom:16px;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-              <span class="ai-badge online" id="puterStatus">🟢 Gemini AI Active</span>
-              <span style="font-size:0.8rem;color:var(--text-muted);">Built-in — works for everyone</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="ai-badge online">🟢 AI Ready (Smart Search)</span>
             </div>
-            <p style="font-size:0.85rem;color:var(--text-secondary);">Powered by Google Gemini 2.0 Flash. No setup needed — AI works for every visitor.</p>
           </div>
+
+          <!-- Custom System Prompt -->
+          <details open style="margin-bottom:16px;">
+            <summary style="cursor:pointer;color:var(--text);font-weight:600;font-size:0.9rem;">📝 System Prompt (how AI behaves)</summary>
+            <div class="form-group" style="margin-top:12px;">
+              <label class="form-label" for="customSystemPrompt">Custom System Prompt</label>
+              <textarea id="customSystemPrompt" class="form-input" rows="6" placeholder="You are a helpful study assistant...
+
+Rules:
+- Keep answers brief
+- Use bullet points
+- Explain like I'm 15"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary btn-small" onclick="saveSystemPrompt()">💾 Save Prompt</button>
+              <button class="btn btn-secondary btn-small" onclick="resetSystemPrompt()">↩️ Reset to Default</button>
+            </div>
+          </details>
+
+          <!-- Gemini Override -->
           <details style="margin-bottom:16px;">
-            <summary style="cursor:pointer;color:var(--text-secondary);font-size:0.85rem;">🔑 Override with your own Gemini API Key (optional)</summary>
+            <summary style="cursor:pointer;color:var(--text-secondary);font-size:0.85rem;">🔑 Override with Gemini API Key (optional)</summary>
             <p style="font-size:0.8rem;color:var(--text-muted);margin:8px 0;">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--accent);">aistudio.google.com/apikey</a></p>
             <div class="form-group">
               <label class="form-label" for="geminiApiKey">Gemini API Key</label>
@@ -512,7 +534,7 @@
             </div>
             <div style="display:flex;gap:8px;">
               <button class="btn btn-primary btn-small" onclick="saveGeminiKey()">💾 Save Key</button>
-              <button class="btn btn-secondary btn-small" onclick="clearGeminiKey()">↩️ Reset to Default</button>
+              <button class="btn btn-secondary btn-small" onclick="clearGeminiKey()">↩️ Reset</button>
             </div>
           </details>
           <div id="aiStatus" style="font-size:0.85rem;"></div>
@@ -610,6 +632,8 @@
     </div>
   </div>
 
+  <!-- PDF.js for PDF parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <!-- App Script -->
   <script src="app.js"></script>
 </body>
