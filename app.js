@@ -95,7 +95,7 @@ function showToast(message,type='info'){const container=document.getElementById(
 function togglePassword(inputId,btn){const input=document.getElementById(inputId);if(!input)return;const isPassword=input.type==='password';input.type=isPassword?'text':'password';btn.classList.toggle('active',isPassword);btn.setAttribute('aria-label',isPassword?'Hide password':'Show password');}
 
 /* ===== AI CHATBOT (Puter.js + Gemini fallback) ===== */
-const AI_SYSTEM_PROMPT = 'You are FocusForge AI, a friendly and knowledgeable study assistant for ICSE Class 10 students. Help with Math, Physics, Chemistry, Biology, and English. Give clear, concise explanations suitable for a 15-16 year old. Use simple formatting with line breaks. If asked about non-study topics, gently redirect to studying. Keep responses under 250 words unless asked for more detail.';
+const AI_SYSTEM_PROMPT = 'You are FocusForge AI, a friendly study assistant for ICSE Class 10 students. Help with Math, Physics, Chemistry, Biology, and English. Give clear, concise explanations. Use simple formatting with line breaks. Redirect non-study topics gently. Keep responses under 250 words.';
 
 function getGeminiKey(){const user=getCurrentUser();const key=user?'focusforge-gemini-key-'+user.email:'focusforge-gemini-key';return localStorage.getItem(key)||'';}
 
@@ -107,9 +107,9 @@ function updateAIStatus(){const el=document.getElementById('aiStatus');if(!el)re
 
 async function sendMessage(){const input=document.getElementById('chatInput');const msg=input.value.trim();if(!msg)return;addChatMessage(escapeHtml(msg),'user');input.value='';addTypingIndicator();try{const response=await callAI(msg);removeTypingIndicator();addChatMessage(response,'bot');}catch(err){removeTypingIndicator();console.error('AI error:',err);addChatMessage(getBotResponse(msg),'bot');}}
 
-async function callAI(userMessage){const geminiKey=getGeminiKey();if(geminiKey){try{return await callGeminiAPI(userMessage);}catch(e){console.warn('Gemini failed, falling back to Puter:',e);}}if(typeof puter!=='undefined'&&puter.ai){return await callPuterAI(userMessage);}throw new Error('No AI available');}
+async function callAI(userMessage){const geminiKey=getGeminiKey();if(geminiKey){try{return await callGeminiAPI(userMessage);}catch(e){console.warn('Gemini failed, trying Puter:',e.message);}}if(typeof puter!=='undefined'&&puter.ai){try{return await callPuterAI(userMessage);}catch(e){console.warn('Puter failed:',e.message);}}return getBotResponse(userMessage);}
 
-async function callPuterAI(userMessage){const response=await puter.ai.chat([{role:'system',content:AI_SYSTEM_PROMPT},{role:'user',content:userMessage}],{model:'google/gemini-2.0-flash',stream:true});let text='';for await(const part of response){if(part?.text){text+=part.text;}}if(!text)throw new Error('Empty Puter response');const formatted=escapeHtml(text).replace(/\n/g,'<br>');return formatted;}
+async function callPuterAI(userMessage){const prompt=AI_SYSTEM_PROMPT+'\n\nStudent: '+userMessage+'\n\nAssistant:';const response=await puter.ai.chat(prompt,{model:'google/gemini-2.0-flash',stream:true});let text='';for await(const part of response){if(part?.text){text+=part.text;}}if(!text)throw new Error('Empty response');return escapeHtml(text).replace(/\n/g,'<br>');}
 
 async function callGeminiAPI(userMessage){const key=getGeminiKey();const url='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key;const body={contents:[{parts:[{text:AI_SYSTEM_PROMPT+'\n\nStudent asks: '+userMessage}]}],generationConfig:{temperature:0.7,maxOutputTokens:500}};const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){const errData=await res.json().catch(()=>({}));throw new Error(errData.error?.message||'API error ('+res.status+')');}const data=await res.json();const text=data.candidates?.[0]?.content?.parts?.[0]?.text;if(!text)throw new Error('No response');return escapeHtml(text).replace(/\n/g,'<br>');}
 
