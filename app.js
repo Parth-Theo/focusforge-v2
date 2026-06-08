@@ -95,11 +95,11 @@ function showToast(message,type='info'){const container=document.getElementById(
 function togglePassword(inputId,btn){const input=document.getElementById(inputId);if(!input)return;const isPassword=input.type==='password';input.type=isPassword?'text':'password';btn.classList.toggle('active',isPassword);btn.setAttribute('aria-label',isPassword?'Hide password':'Show password');}
 
 /* ===== GEMINI AI CHATBOT ===== */
-function getGeminiKey(){return localStorage.getItem('focusforge-gemini-key')||'';}
+function getGeminiKey(){const user=getCurrentUser();const key=user?'focusforge-gemini-key-'+user.email:'focusforge-gemini-key';return localStorage.getItem(key)||'';}
 
-function saveGeminiKey(){const key=document.getElementById('geminiApiKey').value.trim();if(!key){showToast('Enter an API key','error');return;}localStorage.setItem('focusforge-gemini-key',key);updateAIStatus();showToast('API key saved!','success');}
+function saveGeminiKey(){const key=document.getElementById('geminiApiKey').value.trim();if(!key){showToast('Enter an API key','error');return;}const user=getCurrentUser();const storageKey=user?'focusforge-gemini-key-'+user.email:'focusforge-gemini-key';localStorage.setItem(storageKey,key);updateAIStatus();showToast('API key saved!','success');}
 
-function clearGeminiKey(){localStorage.removeItem('focusforge-gemini-key');document.getElementById('geminiApiKey').value='';updateAIStatus();showToast('API key cleared','warning');}
+function clearGeminiKey(){const user=getCurrentUser();const storageKey=user?'focusforge-gemini-key-'+user.email:'focusforge-gemini-key';localStorage.removeItem(storageKey);document.getElementById('geminiApiKey').value='';updateAIStatus();showToast('API key cleared','warning');}
 
 function updateAIStatus(){const el=document.getElementById('aiStatus');if(!el)return;const key=getGeminiKey();if(key){el.innerHTML='<span class="ai-badge online">🟢 AI Connected</span>';}else{el.innerHTML='<span class="ai-badge offline">🟡 Using offline mode</span>';}}
 
