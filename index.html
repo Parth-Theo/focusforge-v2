@@ -270,7 +270,7 @@
         </div>
         <div class="chatbot-container">
           <div class="chat-messages" id="chatMessages">
-            <div class="chat-message bot">🤖 <strong>Welcome!</strong> I can help with ICSE topics. Try: "explain quadratic", "study tips", or use the Test Builder tab.</div>
+            <div class="chat-message bot">🤖 <strong>Welcome to FocusForge AI!</strong><br><br>I'm your personal ICSE study assistant powered by AI. I can:<br><br>📐 <strong>Explain concepts</strong> — "Explain quadratic equations"<br>🧪 <strong>Help with homework</strong> — "What is chemical bonding?"<br>💡 <strong>Give study tips</strong> — "How to prepare for boards?"<br>📝 <strong>Practice questions</strong> — "Give me 5 trigonometry questions"<br><br>Just type your question below!</div>
           </div>
           <div class="quick-actions">
             <button class="quick-action" onclick="sendQuickMessage('Explain quadratic equations')">📐 Quadratic</button>
@@ -489,21 +489,31 @@
       <div id="adminSettingsTab" style="display:none;">
         <div class="settings-section">
           <div class="admin-section-title">🤖 AI Assistant</div>
-          <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px;">Enter a free Google Gemini API key to enable real AI responses. Get one at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--accent);">aistudio.google.com/apikey</a></p>
-          <div class="form-group">
-            <label class="form-label" for="geminiApiKey">Gemini API Key</label>
-            <div class="password-wrapper">
-              <input type="password" id="geminiApiKey" class="form-input" placeholder="Paste your API key here">
-              <button type="button" class="password-toggle" onclick="togglePassword('geminiApiKey', this)" aria-label="Show API key">
-                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-              </button>
+          <div style="background:var(--surface);border-radius:8px;padding:12px;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <span class="ai-badge online" id="puterStatus">🟢 Puter AI Active</span>
+              <span style="font-size:0.8rem;color:var(--text-muted);">Default — no setup needed</span>
             </div>
+            <p style="font-size:0.85rem;color:var(--text-secondary);">Powered by Puter.js — free AI with no API key. Uses GPT, Claude, and Gemini models automatically.</p>
           </div>
-          <div style="display:flex;gap:8px;">
-            <button class="btn btn-primary" onclick="saveGeminiKey()">💾 Save Key</button>
-            <button class="btn btn-secondary" onclick="clearGeminiKey()">🗑️ Clear</button>
-          </div>
-          <div id="aiStatus" style="margin-top:8px;font-size:0.85rem;"></div>
+          <details style="margin-bottom:16px;">
+            <summary style="cursor:pointer;color:var(--text-secondary);font-size:0.85rem;">🔑 Override with Gemini API Key (optional)</summary>
+            <p style="font-size:0.8rem;color:var(--text-muted);margin:8px 0;">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--accent);">aistudio.google.com/apikey</a></p>
+            <div class="form-group">
+              <label class="form-label" for="geminiApiKey">Gemini API Key</label>
+              <div class="password-wrapper">
+                <input type="password" id="geminiApiKey" class="form-input" placeholder="Paste your API key here">
+                <button type="button" class="password-toggle" onclick="togglePassword('geminiApiKey', this)" aria-label="Show API key">
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                </button>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary btn-small" onclick="saveGeminiKey()">💾 Save Key</button>
+              <button class="btn btn-secondary btn-small" onclick="clearGeminiKey()">🗑️ Clear</button>
+            </div>
+          </details>
+          <div id="aiStatus" style="font-size:0.85rem;"></div>
         </div>
         <div class="settings-section" style="margin-top:24px;">
           <div class="admin-section-title">📦 Data Management</div>
@@ -599,6 +609,7 @@
   </div>
 
   <!-- App Script -->
+  <script src="https://js.puter.com/v2/"></script>
   <script src="app.js"></script>
 </body>
 </html>
