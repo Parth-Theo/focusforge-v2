@@ -94,24 +94,122 @@ function showToast(message,type='info'){const container=document.getElementById(
 /* ===== PASSWORD TOGGLE ===== */
 function togglePassword(inputId,btn){const input=document.getElementById(inputId);if(!input)return;const isPassword=input.type==='password';input.type=isPassword?'text':'password';btn.classList.toggle('active',isPassword);btn.setAttribute('aria-label',isPassword?'Hide password':'Show password');}
 
-/* ===== AI CHATBOT (DevToolBox - free, no key needed) ===== */
-const AI_SYSTEM_PROMPT = 'You are FocusForge AI, a brief study assistant for ICSE Class 10 students. Rules: 1) Keep answers under 150 words. 2) Use simple language for 15-year-olds. 3) Use bullet points and short paragraphs. 4) Cover Math, Physics, Chemistry, Biology, English. 5) For non-study topics, redirect to studying. 6) Be friendly and encouraging.';
+/* ===== AI CHATBOT (Smart: AI + Web Search) ===== */
+const AI_SYSTEM_PROMPT = `You are FocusForge AI, a smart study assistant for ICSE Class 10 students.
+
+RULES:
+- Keep answers under 200 words
+- Use simple language for 15-year-olds
+- Always use bullet points and short paragraphs
+- Cover ALL subjects: Math, Physics, Chemistry, Biology, English, History, Geography, Computer Science
+- If you get reference data below, use it to give accurate answers
+- Vary your explanation style: use examples, analogies, step-by-step breakdowns, real-life connections
+- For formulas, show them clearly
+- Be friendly, encouraging, and enthusiastic
+- If you don't know something, say so honestly`;
 
 async function sendMessage(){const input=document.getElementById('chatInput');const msg=input.value.trim();if(!msg)return;addChatMessage(escapeHtml(msg),'user');input.value='';addTypingIndicator();try{const response=await callAI(msg);removeTypingIndicator();addChatMessage(response,'bot');}catch(err){removeTypingIndicator();console.error('AI error:',err);addChatMessage(getBotResponse(msg),'bot');}}
 
-async function callAI(userMessage){const prompt=AI_SYSTEM_PROMPT+'\n\nStudent: '+userMessage;try{return await callDevToolBoxAI(prompt);}catch(e){console.warn('DevToolBox failed:',e.message);}try{const user=getCurrentUser();const storageKey=user?'focusforge-gemini-key-'+user.email:'focusforge-gemini-key';const customKey=localStorage.getItem(storageKey);if(customKey){return await callGeminiAPI(prompt,customKey);}}catch(e){console.warn('Gemini failed:',e.message);}return getBotResponse(userMessage);}
+async function callAI(userMessage){
+  // Step 1: Search the web for reference data
+  let webContext='';
+  try{
+    webContext=await searchWeb(userMessage);
+  }catch(e){console.warn('Web search failed:',e.message);}
 
-async function callDevToolBoxAI(prompt){const res=await fetch('https://devtoolbox-api.devtoolbox-api.workers.dev/ai/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})});if(!res.ok)throw new Error('API error '+res.status);const data=await res.json();if(!data.response)throw new Error('No response');return escapeHtml(data.response).replace(/\n/g,'<br>');}
+  // Step 2: Build prompt with context
+  let prompt=AI_SYSTEM_PROMPT+'\n\n';
+  if(webContext)prompt+='REFERENCE DATA FROM WEB:\n'+webContext+'\n\n';
+  prompt+='Student question: '+userMessage+'\n\nAnswer concisely with bullet points:';
 
-async function callGeminiAPI(prompt,key){const url='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key;const body={contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.7,maxOutputTokens:300}};const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok)throw new Error('Gemini error');const data=await res.json();const text=data.candidates?.[0]?.content?.parts?.[0]?.text;if(!text)throw new Error('No response');return escapeHtml(text).replace(/\n/g,'<br>');}
+  // Step 3: Call AI with context
+  try{return await callDevToolBoxAI(prompt);}catch(e){console.warn('DevToolBox failed:',e.message);}
 
+  // Step 4: Fallback to Gemini if custom key set
+  try{const user=getCurrentUser();const storageKey=user?'focusforge-gemini-key-'+user.email:'focusforge-gemini-key';const customKey=localStorage.getItem(storageKey);if(customKey)return await callGeminiAPI(prompt,customKey);}catch(e){console.warn('Gemini failed:',e.message);}
+
+  // Step 5: If AI fails but we have web data, format it nicely
+  if(webContext)return formatWebData(userMessage,webContext);
+
+  return getBotResponse(userMessage);
+}
+
+/* ===== WEB SEARCH (Wikipedia + DuckDuckGo) ===== */
+async function searchWeb(query){
+  const results=await Promise.allSettled([
+    searchWikipedia(query),
+    searchDuckDuckGo(query)
+  ]);
+  let context='';
+  if(results[0].status==='fulfilled'&&results[0].value)context+=results[0].value+'\n';
+  if(results[1].status==='fulfilled'&&results[1].value)context+=results[1].value+'\n';
+  return context.trim();
+}
+
+async function searchWikipedia(query){
+  // Extract key terms for better search
+  const searchTerms=query.replace(/explain|what is|tell me about|define|describe/gi,'').trim();
+  const url='https://en.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(searchTerms);
+  const res=await fetch(url);
+  if(!res.ok)return '';
+  const data=await res.json();
+  if(data.extract&&data.extract.length>20)return 'Wikipedia: '+data.extract.substring(0,500);
+  return '';
+}
+
+async function searchDuckDuckGo(query){
+  const url='https://api.duckduckgo.com/?q='+encodeURIComponent(query)+'&format=json&no_html=1';
+  const res=await fetch(url);
+  if(!res.ok)return '';
+  const data=await res.json();
+  let info='';
+  if(data.Abstract)info+='Summary: '+data.Abstract.substring(0,300)+'\n';
+  if(data.Answer)info+='Answer: '+data.Answer+'\n';
+  if(data.RelatedTopics&&data.RelatedTopics.length>0){
+    const topics=data.RelatedTopics.filter(t=>t.Text).slice(0,3);
+    if(topics.length>0)info+='Related: '+topics.map(t=>t.Text.substring(0,100)).join('; ');
+  }
+  return info;
+}
+
+function formatWebData(question,webData){
+  const clean=webData.replace(/Wikipedia: |Summary: |Answer: |Related: /g,'').trim();
+  if(!clean)return getBotResponse(question);
+  return '🔍 <b>Here\'s what I found:</b><br><br>'+escapeHtml(clean).replace(/\n/g,'<br>');
+}
+
+/* ===== AI API CALLS ===== */
+async function callDevToolBoxAI(prompt){
+  const res=await fetch('https://devtoolbox-api.devtoolbox-api.workers.dev/ai/generate',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({prompt:prompt})
+  });
+  if(!res.ok)throw new Error('API error '+res.status);
+  const data=await res.json();
+  if(!data.response)throw new Error('No response');
+  return escapeHtml(data.response).replace(/\n/g,'<br>');
+}
+
+async function callGeminiAPI(prompt,key){
+  const url='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key;
+  const body={contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.8,maxOutputTokens:400}};
+  const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!res.ok)throw new Error('Gemini error');
+  const data=await res.json();
+  const text=data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if(!text)throw new Error('No response');
+  return escapeHtml(text).replace(/\n/g,'<br>');
+}
+
+/* ===== SETTINGS ===== */
 function getGeminiKey(){const _a1='AQ.Ab8RN6KwU',_a2='sjqQ6tCBmdDeG',_a3='dEIop9YWjhiB',_a4='4DvhP_hbPI2OnL5w';return _a1+_a2+_a3+_a4;}
 
 function saveGeminiKey(){const key=document.getElementById('geminiApiKey').value.trim();if(!key){showToast('Enter an API key','error');return;}const user=getCurrentUser();const storageKey=user?'focusforge-gemini-key-'+user.email:'focusforge-gemini-key';localStorage.setItem(storageKey,key);updateAIStatus();showToast('Custom key saved!','success');}
 
 function clearGeminiKey(){const user=getCurrentUser();const storageKey=user?'focusforge-gemini-key-'+user.email:'focusforge-gemini-key';localStorage.removeItem(storageKey);document.getElementById('geminiApiKey').value='';updateAIStatus();showToast('Using default','success');}
 
-function updateAIStatus(){const el=document.getElementById('aiStatus');if(!el)return;el.innerHTML='<span class="ai-badge online">🟢 AI Ready (DevToolBox)</span>';}
+function updateAIStatus(){const el=document.getElementById('aiStatus');if(!el)return;el.innerHTML='<span class="ai-badge online">🟢 AI Ready (Smart Search)</span>';}
 
 function addTypingIndicator(){const messages=document.getElementById('chatMessages');const el=document.createElement('div');el.className='typing-indicator';el.id='typingIndicator';el.innerHTML='<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';messages.appendChild(el);messages.scrollTop=messages.scrollHeight;}
 
