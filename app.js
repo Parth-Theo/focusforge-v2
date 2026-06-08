@@ -94,26 +94,24 @@ function showToast(message,type='info'){const container=document.getElementById(
 /* ===== PASSWORD TOGGLE ===== */
 function togglePassword(inputId,btn){const input=document.getElementById(inputId);if(!input)return;const isPassword=input.type==='password';input.type=isPassword?'text':'password';btn.classList.toggle('active',isPassword);btn.setAttribute('aria-label',isPassword?'Hide password':'Show password');}
 
-/* ===== AI CHATBOT (Puter.js primary + Gemini fallback) ===== */
+/* ===== AI CHATBOT (DevToolBox - free, no key needed) ===== */
 const AI_SYSTEM_PROMPT = 'You are FocusForge AI, a brief study assistant for ICSE Class 10 students. Rules: 1) Keep answers under 150 words. 2) Use simple language for 15-year-olds. 3) Use bullet points and short paragraphs. 4) Cover Math, Physics, Chemistry, Biology, English. 5) For non-study topics, redirect to studying. 6) Be friendly and encouraging.';
 
-const _a1='AQ.Ab8RN6KwU',_a2='sjqQ6tCBmdDeG',_a3='dEIop9YWjhiB',_a4='4DvhP_hbPI2OnL5w';
+async function sendMessage(){const input=document.getElementById('chatInput');const msg=input.value.trim();if(!msg)return;addChatMessage(escapeHtml(msg),'user');input.value='';addTypingIndicator();try{const response=await callAI(msg);removeTypingIndicator();addChatMessage(response,'bot');}catch(err){removeTypingIndicator();console.error('AI error:',err);addChatMessage(getBotResponse(msg),'bot');}}
 
-function getGeminiKey(){return _a1+_a2+_a3+_a4;}
+async function callAI(userMessage){const prompt=AI_SYSTEM_PROMPT+'\n\nStudent: '+userMessage;try{return await callDevToolBoxAI(prompt);}catch(e){console.warn('DevToolBox failed:',e.message);}try{const user=getCurrentUser();const storageKey=user?'focusforge-gemini-key-'+user.email:'focusforge-gemini-key';const customKey=localStorage.getItem(storageKey);if(customKey){return await callGeminiAPI(prompt,customKey);}}catch(e){console.warn('Gemini failed:',e.message);}return getBotResponse(userMessage);}
+
+async function callDevToolBoxAI(prompt){const res=await fetch('https://devtoolbox-api.devtoolbox-api.workers.dev/ai/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})});if(!res.ok)throw new Error('API error '+res.status);const data=await res.json();if(!data.response)throw new Error('No response');return escapeHtml(data.response).replace(/\n/g,'<br>');}
+
+async function callGeminiAPI(prompt,key){const url='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key;const body={contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.7,maxOutputTokens:300}};const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok)throw new Error('Gemini error');const data=await res.json();const text=data.candidates?.[0]?.content?.parts?.[0]?.text;if(!text)throw new Error('No response');return escapeHtml(text).replace(/\n/g,'<br>');}
+
+function getGeminiKey(){const _a1='AQ.Ab8RN6KwU',_a2='sjqQ6tCBmdDeG',_a3='dEIop9YWjhiB',_a4='4DvhP_hbPI2OnL5w';return _a1+_a2+_a3+_a4;}
 
 function saveGeminiKey(){const key=document.getElementById('geminiApiKey').value.trim();if(!key){showToast('Enter an API key','error');return;}const user=getCurrentUser();const storageKey=user?'focusforge-gemini-key-'+user.email:'focusforge-gemini-key';localStorage.setItem(storageKey,key);updateAIStatus();showToast('Custom key saved!','success');}
 
 function clearGeminiKey(){const user=getCurrentUser();const storageKey=user?'focusforge-gemini-key-'+user.email:'focusforge-gemini-key';localStorage.removeItem(storageKey);document.getElementById('geminiApiKey').value='';updateAIStatus();showToast('Using default','success');}
 
-function updateAIStatus(){const el=document.getElementById('aiStatus');if(!el)return;el.innerHTML='<span class="ai-badge online">🟢 AI Ready (Puter + Gemini)</span>';}
-
-async function sendMessage(){const input=document.getElementById('chatInput');const msg=input.value.trim();if(!msg)return;addChatMessage(escapeHtml(msg),'user');input.value='';addTypingIndicator();try{const response=await callAI(msg);removeTypingIndicator();addChatMessage(response,'bot');}catch(err){removeTypingIndicator();console.error('AI error:',err);addChatMessage(getBotResponse(msg),'bot');}}
-
-async function callAI(userMessage){const prompt=AI_SYSTEM_PROMPT+'\n\nStudent: '+userMessage;try{return await callPuterAI(prompt);}catch(e){console.warn('Puter failed, trying Gemini:',e.message);}try{return await callGeminiAPI(prompt);}catch(e){console.warn('Gemini failed:',e.message);}return getBotResponse(userMessage);}
-
-async function callPuterAI(prompt){if(typeof puter==='undefined'||!puter.ai)throw new Error('Puter not loaded');const response=await puter.ai.chat(prompt,{model:'google/gemini-2.0-flash',stream:true});let text='';for await(const part of response){if(part?.text){text+=part.text;}}if(!text)throw new Error('Empty Puter response');return escapeHtml(text).replace(/\n/g,'<br>');}
-
-async function callGeminiAPI(prompt){const user=getCurrentUser();const storageKey=user?'focusforge-gemini-key-'+user.email:'focusforge-gemini-key';const customKey=localStorage.getItem(storageKey);const key=customKey||getGeminiKey();const models=['gemini-2.0-flash','gemini-1.5-flash'];for(const model of models){try{const url='https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+key;const body={contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.7,maxOutputTokens:300}};const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok)continue;const data=await res.json();const text=data.candidates?.[0]?.content?.parts?.[0]?.text;if(text)return escapeHtml(text).replace(/\n/g,'<br>');}catch(e){continue;}}throw new Error('All Gemini models failed');}
+function updateAIStatus(){const el=document.getElementById('aiStatus');if(!el)return;el.innerHTML='<span class="ai-badge online">🟢 AI Ready (DevToolBox)</span>';}
 
 function addTypingIndicator(){const messages=document.getElementById('chatMessages');const el=document.createElement('div');el.className='typing-indicator';el.id='typingIndicator';el.innerHTML='<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';messages.appendChild(el);messages.scrollTop=messages.scrollHeight;}
 
