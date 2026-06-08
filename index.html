@@ -491,13 +491,13 @@
           <div class="admin-section-title">🤖 AI Assistant</div>
           <div style="background:var(--surface);border-radius:8px;padding:12px;margin-bottom:16px;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-              <span class="ai-badge online" id="puterStatus">🟢 Puter AI Active</span>
-              <span style="font-size:0.8rem;color:var(--text-muted);">Default — no setup needed</span>
+              <span class="ai-badge online" id="puterStatus">🟢 Gemini AI Active</span>
+              <span style="font-size:0.8rem;color:var(--text-muted);">Built-in — works for everyone</span>
             </div>
-            <p style="font-size:0.85rem;color:var(--text-secondary);">Powered by Puter.js — free AI with no API key. Uses GPT, Claude, and Gemini models automatically.</p>
+            <p style="font-size:0.85rem;color:var(--text-secondary);">Powered by Google Gemini 2.0 Flash. No setup needed — AI works for every visitor.</p>
           </div>
           <details style="margin-bottom:16px;">
-            <summary style="cursor:pointer;color:var(--text-secondary);font-size:0.85rem;">🔑 Override with Gemini API Key (optional)</summary>
+            <summary style="cursor:pointer;color:var(--text-secondary);font-size:0.85rem;">🔑 Override with your own Gemini API Key (optional)</summary>
             <p style="font-size:0.8rem;color:var(--text-muted);margin:8px 0;">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--accent);">aistudio.google.com/apikey</a></p>
             <div class="form-group">
               <label class="form-label" for="geminiApiKey">Gemini API Key</label>
@@ -510,7 +510,7 @@
             </div>
             <div style="display:flex;gap:8px;">
               <button class="btn btn-primary btn-small" onclick="saveGeminiKey()">💾 Save Key</button>
-              <button class="btn btn-secondary btn-small" onclick="clearGeminiKey()">🗑️ Clear</button>
+              <button class="btn btn-secondary btn-small" onclick="clearGeminiKey()">↩️ Reset to Default</button>
             </div>
           </details>
           <div id="aiStatus" style="font-size:0.85rem;"></div>
@@ -609,7 +609,6 @@
   </div>
 
   <!-- App Script -->
-  <script src="https://js.puter.com/v2/"></script>
   <script src="app.js"></script>
 </body>
 </html>
