@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FocusForge — ICSE Boards Study System</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230f0f23' width='100' height='100' rx='20'/><text y='.85em' font-size='65' x='18'>⚡</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Background -->
+  <div class="bg-animation" id="bgAnimation" aria-hidden="true"></div>
+  <div class="grid-pattern" aria-hidden="true"></div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" role="status" aria-live="polite"></div>
+
+  <!-- ========== LOGIN MODAL ========== -->
+  <div class="modal-overlay" id="loginModal" role="dialog" aria-label="Login">
+    <div class="auth-card">
+      <div style="text-align:center;margin-bottom:24px;">
+        <div class="logo-icon" style="margin:0 auto 16px;" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+        </div>
+        <h1 class="auth-title">FocusForge</h1>
+        <p class="auth-subtitle">ICSE Boards Study System</p>
+      </div>
+
+      <!-- Step 1: Verification Code -->
+      <div id="codeStep">
+        <div class="code-display">
+          <div class="code-label">Your Verification Code</div>
+          <div class="code-number" id="displayCode" aria-live="polite">------</div>
+          <button class="btn btn-primary btn-small" style="margin-top:12px;" onclick="generateNewCode()" aria-label="Generate new verification code">🔄 New Code</button>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="verificationCode">Enter 6-digit Code</label>
+          <input type="text" id="verificationCode" class="form-input" placeholder="Enter code to continue" maxlength="6" style="text-align:center;font-size:1.2rem;letter-spacing:5px;" onkeydown="handleCodeKeydown(event)">
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="verifyCode()">Continue</button>
+        <div id="loginError" class="form-error" aria-live="assertive"></div>
+      </div>
+
+      <!-- Step 2: User + Password -->
+      <div id="userStep" style="display:none;">
+        <div class="form-group">
+          <label class="form-label" for="userSelect">Select User</label>
+          <select class="session-subject-select" id="userSelect"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" class="form-input" placeholder="Enter your password">
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="handleLogin()">Sign In</button>
+        <button class="btn btn-secondary btn-small" style="width:100%;margin-top:12px;" onclick="backToCode()">← Back to Code Entry</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== FIRST-RUN SETUP MODAL ========== -->
+  <div class="modal-overlay" id="setupModal" role="dialog" aria-label="Initial Setup">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeSetupModal()" aria-label="Close setup">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+      <h2 class="modal-title">🎓 Welcome to FocusForge</h2>
+      <p style="color:var(--text-secondary);margin-bottom:24px;">Create an admin account to get started. This is a local profile — not a real login.</p>
+      <div class="form-group">
+        <label class="form-label" for="setupName">Full Name</label>
+        <input type="text" id="setupName" class="form-input" placeholder="e.g., John Doe">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="setupEmail">Email</label>
+        <input type="email" id="setupEmail" class="form-input" placeholder="e.g., john@school.edu">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="setupPassword">Password (min 6 characters)</label>
+        <input type="password" id="setupPassword" class="form-input" placeholder="Choose a password">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="setupConfirm">Confirm Password</label>
+        <input type="password" id="setupConfirm" class="form-input" placeholder="Confirm password">
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="handleSetup()">Create Admin Account</button>
+    </div>
+  </div>
+
+  <!-- ========== FOCUS OVERLAY ========== -->
+  <div class="focus-overlay" id="focusOverlay" role="dialog" aria-label="Focus timer">
+    <div class="focus-label" id="focusLabel">Focus Time</div>
+    <div class="focus-subject" id="focusSubject">Subject</div>
+    <div class="focus-timer" id="focusTimer" aria-live="polite">25:00</div>
+    <div style="display:flex;gap:16px;margin-top:32px;">
+      <button class="btn btn-secondary" onclick="startTimer()" aria-label="Pause or resume timer">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg> Pause
+      </button>
+      <button class="btn btn-danger" onclick="stopTimer()" aria-label="Stop focus session">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M6 6h12v12H6z"/></svg> End Session
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== MAIN APP ========== -->
+  <div class="app" id="mainApp" style="display:none;">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <div class="logo-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+        </div>
+        <div>
+          <span class="logo-text">FocusForge</span>
+          <div style="font-size:0.75rem;color:var(--text-secondary);">Welcome, <span id="userName">Student</span></div>
+        </div>
+      </div>
+      <div class="header-stats" id="headerStats" style="display:none;">
+        <div class="stat-item" aria-label="Streak">
+          <svg viewBox="0 0 24 24" fill="#f59e0b" width="24" height="24" aria-hidden="true"><path d="M12 2C10.5 6 8 8 8 12C8 15.5 9.5 18 12 18C14.5 18 16 15.5 16 12C16 8 13.5 6 12 2Z"/><path d="M12 20C10 22 7 22 7 22C7 22 8 20 10 19C10 19 9 18 9 17C9 15 12 14 12 14C12 14 15 15 15 17C15 18 14 19 14 19C16 20 17 22 17 22C17 22 14 22 12 20Z"/></svg>
+          <span style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--warning);" id="headerStreak">0</span>
+        </div>
+        <div class="stat-item" aria-label="Experience points">
+          <svg viewBox="0 0 24 24" fill="#22d3ee" width="24" height="24" aria-hidden="true"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+          <span style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent);" id="headerXP">0 XP</span>
+        </div>
+        <div class="level-badge" id="headerLevel">CADET</div>
+        <button class="btn btn-secondary btn-small" id="adminBtn" style="display:none;" onclick="openAdminModal()" aria-label="Open admin panel">⚙️ Admin</button>
+        <button class="btn btn-secondary btn-small" onclick="downloadBackup()" aria-label="Download backup">💾 Backup</button>
+        <button class="btn btn-secondary btn-small" onclick="handleLogout()" aria-label="Sign out">Logout</button>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main class="main-grid">
+
+      <!-- ===== COMMAND CENTER ===== -->
+      <section class="card command-center" aria-label="Command Center">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+            COMMAND CENTER
+          </h2>
+        </div>
+        <div class="command-content">
+          <!-- Streak -->
+          <div class="streak-display">
+            <div class="streak-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 2C10.5 6 8 8 8 12C8 15.5 9.5 18 12 18C14.5 18 16 15.5 16 12C16 8 13.5 6 12 2Z"/><path d="M12 20C10 22 7 22 7 22C7 22 8 20 10 19C10 19 9 18 9 17C9 15 12 14 12 14C12 14 15 15 15 17C15 18 14 19 14 19C16 20 17 22 17 22C17 22 14 22 12 20Z"/></svg>
+            </div>
+            <div class="streak-count" id="streakCount">0</div>
+            <div class="streak-label">Day Streak</div>
+            <span class="streak-multiplier" id="streakMultiplier">1.0x</span>
+          </div>
+
+          <!-- Timer -->
+          <div class="timer-section">
+            <div class="timer-ring">
+              <svg viewBox="0 0 200 200">
+                <defs>
+                  <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient>
+                </defs>
+                <circle class="timer-ring-bg" cx="100" cy="100" r="90"/>
+                <circle class="timer-ring-progress" id="timerProgress" cx="100" cy="100" r="90"/>
+              </svg>
+              <div class="timer-display">
+                <div class="timer-time" id="timerDisplay">25:00</div>
+                <div class="timer-label" id="timerLabel">Focus Time</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;justify-content:center;">
+              <button class="btn btn-primary" id="startBtn" onclick="startTimer()" aria-label="Start focus session">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M8 5v14l11-7z"/></svg> Start Session
+              </button>
+              <button class="btn btn-danger" id="resetBtn" style="display:none;" onclick="resetTimer()" aria-label="Reset timer">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M6 6h12v12H6z"/></svg> Reset
+              </button>
+            </div>
+          </div>
+
+          <!-- XP Progress -->
+          <div class="progress-section">
+            <div style="text-align:center;">
+              <div style="font-size:1.5rem;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--accent);" id="xpProgress">0%</div>
+              <div style="font-size:0.85rem;color:var(--text-muted);" id="xpNeeded">0 / 100 XP</div>
+            </div>
+            <div class="level-progress">
+              <div class="level-header">
+                <span class="level-current" id="currentLevelName">CADET</span>
+                <span style="color:var(--text-muted);" id="nextLevelName">ENSIGN (100 XP)</span>
+              </div>
+              <div class="level-bar">
+                <div class="level-fill" id="levelFill" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SESSION SETUP ===== -->
+      <section class="card" aria-label="Session Setup">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            SESSION SETUP
+          </h2>
+        </div>
+        <div class="session-setup">
+          <div class="form-group">
+            <label class="form-label" for="sessionSubject">Select Subject</label>
+            <select class="session-subject-select" id="sessionSubject">
+              <option value="">Choose your battlefield...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Duration</label>
+            <div class="duration-options">
+              <button class="duration-btn active" data-duration="25" onclick="selectDuration(this)" aria-label="25 minute session">25m</button>
+              <button class="duration-btn" data-duration="45" onclick="selectDuration(this)" aria-label="45 minute session">45m</button>
+              <button class="duration-btn" data-duration="60" onclick="selectDuration(this)" aria-label="60 minute session">60m</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Session Type</label>
+            <div class="type-options">
+              <button class="type-btn active" data-type="focus" onclick="selectSessionType(this)">📖 Focus</button>
+              <button class="type-btn" data-type="break" onclick="selectSessionType(this)">☕ Break</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SUBJECTS ===== -->
+      <section class="card" aria-label="Your Subjects">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/></svg>
+            YOUR SUBJECTS
+          </h2>
+        </div>
+        <div class="subjects-grid" id="subjectsGrid">
+          <p style="color:var(--text-muted);text-align:center;padding:40px;">No subjects yet. Click + to add!</p>
+        </div>
+      </section>
+
+      <!-- ===== AI ASSISTANT ===== -->
+      <section class="card" aria-label="AI Study Assistant">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            🤖 STUDY ASSISTANT
+          </h2>
+        </div>
+        <div class="chatbot-container">
+          <div class="chat-messages" id="chatMessages">
+            <div class="chat-message bot">🤖 <strong>Welcome!</strong> I can help with ICSE topics. Try: "explain quadratic", "study tips", or use the Test Builder tab.</div>
+          </div>
+          <div class="quick-actions">
+            <button class="quick-action" onclick="sendQuickMessage('Explain quadratic equations')">📐 Quadratic</button>
+            <button class="quick-action" onclick="sendQuickMessage('Explain trigonometry')">📏 Trigonometry</button>
+            <button class="quick-action" onclick="sendQuickMessage('Study tips')">💡 Tips</button>
+            <button class="quick-action" onclick="sendQuickMessage('Explain chemical bonding')">🧪 Chemistry</button>
+          </div>
+          <div class="chat-input-container">
+            <label for="chatInput" class="sr-only">Chat message</label>
+            <input type="text" class="chat-input" id="chatInput" placeholder="Ask about any ICSE topic..." onkeydown="handleChatKeydown(event)">
+            <button class="send-btn" onclick="sendMessage()" aria-label="Send message">
+              <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== TEST BUILDER ===== -->
+      <section class="card" aria-label="Test Paper Builder">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+            📝 TEST BUILDER
+          </h2>
+        </div>
+        <div class="test-builder">
+          <div class="test-step">
+            <div class="test-step-title">📚 Step 1: Topic</div>
+            <select class="session-subject-select" id="testSubject">
+              <option value="">Select Subject</option>
+            </select>
+            <label for="testChapter" class="sr-only">Chapter name</label>
+            <input type="text" id="testChapter" class="form-input" placeholder="Or type chapter name" style="margin-top:8px;">
+          </div>
+          <div class="test-step">
+            <div class="test-step-title">📊 Step 2: Total Marks</div>
+            <div class="test-options">
+              <div class="test-option" data-marks="20" onclick="selectMarks(this)" role="button" tabindex="0">20 Marks</div>
+              <div class="test-option selected" data-marks="50" onclick="selectMarks(this)" role="button" tabindex="0">50 Marks</div>
+              <div class="test-option" data-marks="100" onclick="selectMarks(this)" role="button" tabindex="0">100 Marks</div>
+            </div>
+          </div>
+          <button class="generate-btn" onclick="generateTestPaper()">⚡ GENERATE TEST PAPER</button>
+          <div class="test-output" id="testOutput">
+            <div class="test-paper" id="testPaperContent"></div>
+            <button class="btn btn-secondary btn-small" style="margin-top:16px;" onclick="copyTest()">📋 Copy</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== ACHIEVEMENTS ===== -->
+      <section class="card" aria-label="Achievements">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>
+            ACHIEVEMENTS
+          </h2>
+        </div>
+        <div class="achievements-grid" id="achievementsGrid"></div>
+      </section>
+
+      <!-- ===== STATISTICS ===== -->
+      <section class="card" aria-label="Study Statistics">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+            BATTLE STATISTICS
+          </h2>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value-large" style="color:var(--primary);" id="totalTime">0h</div>
+            <div class="stat-label-small">Total Study Time</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value-large" style="color:var(--success);" id="totalSessions">0</div>
+            <div class="stat-label-small">Sessions Completed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value-large" style="color:var(--warning);" id="longestStreak">0</div>
+            <div class="stat-label-small">Longest Streak</div>
+          </div>
+        </div>
+        <div class="heatmap-container">
+          <div class="heatmap-header">
+            <span>Study Activity (Last 28 Days)</span>
+            <span>Less ▪ ▪ ▪ ▪ More</span>
+          </div>
+          <div class="heatmap-grid" id="heatmapGrid"></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- FAB: Add Subject -->
+  <button class="fab" id="fab" style="display:none;" onclick="openSubjectModal()" aria-label="Add new subject">
+    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+  </button>
+
+  <!-- ========== SUBJECT MODAL ========== -->
+  <div class="modal-overlay" id="subjectModal" role="dialog" aria-label="Add Subject">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeSubjectModal()" aria-label="Close">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+      <h2 class="modal-title">Add New Subject</h2>
+      <div class="form-group">
+        <label class="form-label" for="subjectName">Subject Name</label>
+        <input type="text" id="subjectName" class="form-input" placeholder="e.g., Mathematics">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Color</label>
+        <div class="color-picker" id="colorPicker" role="radiogroup" aria-label="Subject color">
+          <div class="color-option selected" data-color="#6366f1" style="background:#6366f1;" role="radio" tabindex="0" aria-label="Indigo" onclick="selectColor(this)"></div>
+          <div class="color-option" data-color="#ec4899" style="background:#ec4899;" role="radio" tabindex="0" aria-label="Pink" onclick="selectColor(this)"></div>
+          <div class="color-option" data-color="#22d3ee" style="background:#22d3ee;" role="radio" tabindex="0" aria-label="Cyan" onclick="selectColor(this)"></div>
+          <div class="color-option" data-color="#10b981" style="background:#10b981;" role="radio" tabindex="0" aria-label="Green" onclick="selectColor(this)"></div>
+          <div class="color-option" data-color="#f59e0b" style="background:#f59e0b;" role="radio" tabindex="0" aria-label="Amber" onclick="selectColor(this)"></div>
+          <div class="color-option" data-color="#a855f7" style="background:#a855f7;" role="radio" tabindex="0" aria-label="Purple" onclick="selectColor(this)"></div>
+          <div class="color-option" data-color="#ef4444" style="background:#ef4444;" role="radio" tabindex="0" aria-label="Red" onclick="selectColor(this)"></div>
+          <div class="color-option" data-color="#06b6d4" style="background:#06b6d4;" role="radio" tabindex="0" aria-label="Teal" onclick="selectColor(this)"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Icon</label>
+        <div class="icon-picker" id="iconPicker" role="radiogroup" aria-label="Subject icon">
+          <div class="icon-option selected" data-icon="📚" role="radio" tabindex="0" aria-label="Books" onclick="selectIcon(this)">📚</div>
+          <div class="icon-option" data-icon="📐" role="radio" tabindex="0" aria-label="Ruler" onclick="selectIcon(this)">📐</div>
+          <div class="icon-option" data-icon="🧪" role="radio" tabindex="0" aria-label="Chemistry" onclick="selectIcon(this)">🧪</div>
+          <div class="icon-option" data-icon="🔬" role="radio" tabindex="0" aria-label="Microscope" onclick="selectIcon(this)">🔬</div>
+          <div class="icon-option" data-icon="🌍" role="radio" tabindex="0" aria-label="Globe" onclick="selectIcon(this)">🌍</div>
+          <div class="icon-option" data-icon="📖" role="radio" tabindex="0" aria-label="Book" onclick="selectIcon(this)">📖</div>
+          <div class="icon-option" data-icon="💻" role="radio" tabindex="0" aria-label="Computer" onclick="selectIcon(this)">💻</div>
+          <div class="icon-option" data-icon="🎯" role="radio" tabindex="0" aria-label="Target" onclick="selectIcon(this)">🎯</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:24px;">
+        <button class="btn btn-secondary" style="flex:1;justify-content:center;" onclick="closeSubjectModal()">Cancel</button>
+        <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="saveSubject()">Add Subject</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== CHAPTER MODAL ========== -->
+  <div class="modal-overlay" id="chapterModal" role="dialog" aria-label="Chapters">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeChapterModal()" aria-label="Close">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+      <h2 class="modal-title">📖 <span id="chapterSubjectName">Subject</span></h2>
+      <div id="chaptersList" class="chapters-list"></div>
+      <div id="addChapterInput" style="display:none;margin-top:16px;">
+        <div class="form-group">
+          <label class="form-label" for="newChapterName">New Chapter Name</label>
+          <input type="text" id="newChapterName" class="form-input" placeholder="e.g., Quadratic Equations">
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary btn-small" onclick="closeAddChapterInput()">Cancel</button>
+          <button class="btn btn-primary btn-small" onclick="saveNewChapter()">Add Chapter</button>
+        </div>
+      </div>
+      <button class="add-chapter-btn" id="addChapterBtn" onclick="openAddChapterInput()" style="margin-top:16px;">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        Add Chapter
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== ADMIN MODAL ========== -->
+  <div class="modal-overlay" id="adminModal" role="dialog" aria-label="Admin Panel">
+    <div class="modal-content" style="max-width:700px;">
+      <button class="modal-close" onclick="closeAdminModal()" aria-label="Close">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+      <h2 class="modal-title">⚙️ Admin Panel</h2>
+
+      <div class="admin-tabs">
+        <button class="admin-tab active" onclick="switchAdminTab('users',this)">👥 Users</button>
+        <button class="admin-tab" onclick="switchAdminTab('stats',this)">📊 Stats</button>
+        <button class="admin-tab" onclick="switchAdminTab('settings',this)">⚡ Settings</button>
+      </div>
+
+      <!-- Users Tab -->
+      <div id="adminUsersTab">
+        <div class="admin-user-list" id="adminUserList"></div>
+        <button class="btn btn-primary" style="width:100%;margin-top:16px;justify-content:center;" onclick="openAddUserModal()">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          Add New User
+        </button>
+      </div>
+
+      <!-- Stats Tab -->
+      <div id="adminStatsTab" style="display:none;">
+        <div class="admin-stats-grid">
+          <div class="admin-stat-card">
+            <div class="admin-stat-value" id="adminTotalUsers">0</div>
+            <div class="admin-stat-label">Total Users</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="admin-stat-value" id="adminTotalXP">0</div>
+            <div class="admin-stat-label">Total XP</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="admin-stat-value" id="adminTotalSessions">0</div>
+            <div class="admin-stat-label">Sessions</div>
+          </div>
+          <div class="admin-stat-card">
+            <div class="admin-stat-value" id="adminTotalTime">0h</div>
+            <div class="admin-stat-label">Study Time</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Tab -->
+      <div id="adminSettingsTab" style="display:none;">
+        <div class="settings-section">
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <button class="btn btn-secondary" onclick="exportUsersCSV()">📋 Export Users (CSV)</button>
+            <button class="btn btn-secondary" onclick="exportUserData()">📥 Export Data (JSON)</button>
+            <label class="btn btn-secondary" style="cursor:pointer;">
+              📤 Restore Backup
+              <input type="file" accept=".json" style="display:none;" onchange="handleRestore(event)">
+            </label>
+            <button class="btn btn-danger" onclick="resetAllData()">💥 Reset All Data</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== ADD USER MODAL ========== -->
+  <div class="modal-overlay" id="addUserModal" role="dialog" aria-label="Add User">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeAddUserModal()" aria-label="Close">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+      <h2 class="modal-title">➕ Add New User</h2>
+      <div class="form-group">
+        <label class="form-label" for="newUserName">Full Name</label>
+        <input type="text" id="newUserName" class="form-input" placeholder="e.g., John Doe">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="newUserEmail">Email</label>
+        <input type="email" id="newUserEmail" class="form-input" placeholder="e.g., john@school.edu">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="newUserPassword">Password (min 4 characters)</label>
+        <input type="password" id="newUserPassword" class="form-input" placeholder="Set a password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" id="roleStudent" onclick="setNewUserRole('student')" style="flex:1;">👤 Student</button>
+          <button class="btn btn-secondary" id="roleAdmin" onclick="setNewUserRole('admin')" style="flex:1;">👑 Admin</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:24px;">
+        <button class="btn btn-secondary" style="flex:1;justify-content:center;" onclick="closeAddUserModal()">Cancel</button>
+        <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="saveNewUser()">✅ Create User</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== EDIT USER MODAL ========== -->
+  <div class="modal-overlay" id="editUserModal" role="dialog" aria-label="Edit User">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeEditUserModal()" aria-label="Close">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+      <h2 class="modal-title">✏️ Edit User</h2>
+      <input type="hidden" id="editUserIndex">
+      <div class="form-group">
+        <label class="form-label" for="editUserName">Full Name</label>
+        <input type="text" id="editUserName" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="editUserEmail">Email</label>
+        <input type="email" id="editUserEmail" class="form-input" readonly style="opacity:0.6;cursor:not-allowed;">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="editUserPassword">New Password (leave blank to keep current)</label>
+        <input type="password" id="editUserPassword" class="form-input" placeholder="Enter new password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" id="editRoleStudent" onclick="setEditUserRole('student')" style="flex:1;">👤 Student</button>
+          <button class="btn btn-secondary" id="editRoleAdmin" onclick="setEditUserRole('admin')" style="flex:1;">👑 Admin</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:24px;">
+        <button class="btn btn-danger" onclick="deleteUser()">🗑️ Delete</button>
+        <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="updateUser()">💾 Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Script -->
+  <script src="app.js"></script>
+</body>
+</html>

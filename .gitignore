@@ -1,0 +1,22 @@
+# Security - never commit these
+*.apk
+focusforge-users.csv
+*-backup*.json
+focusforge-export*.json
+
+# Dependencies
+node_modules/
+
+# Build outputs
+build/
+dist/
+.out/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.swp
+*.swo
