@@ -52,7 +52,12 @@
         </div>
         <div class="form-group">
           <label class="form-label" for="loginPassword">Password</label>
-          <input type="password" id="loginPassword" class="form-input" placeholder="Enter your password">
+          <div class="password-wrapper">
+            <input type="password" id="loginPassword" class="form-input" placeholder="Enter your password">
+            <button type="button" class="password-toggle" onclick="togglePassword('loginPassword', this)" aria-label="Show password">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+            </button>
+          </div>
         </div>
         <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="handleLogin()">Sign In</button>
         <button class="btn btn-secondary btn-small" style="width:100%;margin-top:12px;" onclick="backToCode()">← Back to Code Entry</button>
@@ -78,11 +83,21 @@
       </div>
       <div class="form-group">
         <label class="form-label" for="setupPassword">Password (min 6 characters)</label>
-        <input type="password" id="setupPassword" class="form-input" placeholder="Choose a password">
+        <div class="password-wrapper">
+          <input type="password" id="setupPassword" class="form-input" placeholder="Choose a password">
+          <button type="button" class="password-toggle" onclick="togglePassword('setupPassword', this)" aria-label="Show password">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+          </button>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label" for="setupConfirm">Confirm Password</label>
-        <input type="password" id="setupConfirm" class="form-input" placeholder="Confirm password">
+        <div class="password-wrapper">
+          <input type="password" id="setupConfirm" class="form-input" placeholder="Confirm password">
+          <button type="button" class="password-toggle" onclick="togglePassword('setupConfirm', this)" aria-label="Show password">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+          </button>
+        </div>
       </div>
       <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="handleSetup()">Create Admin Account</button>
     </div>
@@ -473,6 +488,25 @@
       <!-- Settings Tab -->
       <div id="adminSettingsTab" style="display:none;">
         <div class="settings-section">
+          <div class="admin-section-title">🤖 AI Assistant</div>
+          <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px;">Enter a free Google Gemini API key to enable real AI responses. Get one at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--accent);">aistudio.google.com/apikey</a></p>
+          <div class="form-group">
+            <label class="form-label" for="geminiApiKey">Gemini API Key</label>
+            <div class="password-wrapper">
+              <input type="password" id="geminiApiKey" class="form-input" placeholder="Paste your API key here">
+              <button type="button" class="password-toggle" onclick="togglePassword('geminiApiKey', this)" aria-label="Show API key">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+              </button>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary" onclick="saveGeminiKey()">💾 Save Key</button>
+            <button class="btn btn-secondary" onclick="clearGeminiKey()">🗑️ Clear</button>
+          </div>
+          <div id="aiStatus" style="margin-top:8px;font-size:0.85rem;"></div>
+        </div>
+        <div class="settings-section" style="margin-top:24px;">
+          <div class="admin-section-title">📦 Data Management</div>
           <div style="display:flex;flex-direction:column;gap:12px;">
             <button class="btn btn-secondary" onclick="exportUsersCSV()">📋 Export Users (CSV)</button>
             <button class="btn btn-secondary" onclick="exportUserData()">📥 Export Data (JSON)</button>
@@ -504,7 +538,12 @@
       </div>
       <div class="form-group">
         <label class="form-label" for="newUserPassword">Password (min 4 characters)</label>
-        <input type="password" id="newUserPassword" class="form-input" placeholder="Set a password">
+        <div class="password-wrapper">
+          <input type="password" id="newUserPassword" class="form-input" placeholder="Set a password">
+          <button type="button" class="password-toggle" onclick="togglePassword('newUserPassword', this)" aria-label="Show password">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+          </button>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Role</label>
@@ -538,7 +577,12 @@
       </div>
       <div class="form-group">
         <label class="form-label" for="editUserPassword">New Password (leave blank to keep current)</label>
-        <input type="password" id="editUserPassword" class="form-input" placeholder="Enter new password">
+        <div class="password-wrapper">
+          <input type="password" id="editUserPassword" class="form-input" placeholder="Enter new password">
+          <button type="button" class="password-toggle" onclick="togglePassword('editUserPassword', this)" aria-label="Show password">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+          </button>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Role</label>
